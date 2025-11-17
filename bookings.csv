@@ -1,0 +1,6 @@
+BookingID,PassengerName,BusNo,SeatNo,TotalFare
+R001,Ravi Kumar,B001,10,750.00
+R002,Priya Sharma,B002,5,450.00
+R003,Amit Verma,B004,1,1200.00
+R004,Neha Singh,B006,2,1200.00
+R005,Vikas Reddy,B010,3,2100.00

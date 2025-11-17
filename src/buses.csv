@@ -1,0 +1,11 @@
+BusNo,Source,Destination,TotalSeats,SeatsAvailable,Fare
+B001,Delhi,Jaipur,45,40,750.00
+B002,Mumbai,Pune,30,25,450.00
+B003,Bangalore,Chennai,40,40,900.50
+B004,Kolkata,Siliguri,50,48,1200.00
+B005,Hyderabad,Goa,35,35,1500.00
+B006,Lucknow,Varanasi,40,38,600.00
+B007,Ahmedabad,Surat,30,30,550.00
+B008,Patna,Ranchi,45,42,850.00
+B009,Bhubaneswar,Cuttack,25,25,200.00
+B010,Chennai,Madurai,35,33,700.00
