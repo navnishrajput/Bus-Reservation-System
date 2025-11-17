@@ -1,10 +1,12 @@
 package com.bus.service;
 
 import com.bus.model.Booking;
+
 import java.util.List;
 
 public class ReportService {
 
+    // Prints a single ticket after booking
     public void printTicket(Booking booking) {
         System.out.println("\n==================================");
         System.out.println("     BUS RESERVATION TICKET     ");
@@ -13,6 +15,7 @@ public class ReportService {
         System.out.println("==================================");
     }
 
+    // Prints a report of all bookings and total revenue
     public void printDailyReport(List<Booking> bookings) {
         if (bookings.isEmpty()) {
             System.out.println("\n--- Daily Report ---");
@@ -30,6 +33,7 @@ public class ReportService {
         System.out.println("-------------------------------------------------------------------------");
 
         for (Booking booking : bookings) {
+            // Uses printf for formatted, aligned output
             System.out.printf("%-10s | %-20s | %-7s | %-12s | %-10.2f%n",
                     booking.getBookingID(),
                     booking.getPassengerName(),

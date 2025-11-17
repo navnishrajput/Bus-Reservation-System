@@ -15,28 +15,30 @@ public class BusService {
 
     public BusService(FileService fileService) {
         this.fileService = fileService;
+        // Load data on startup
         this.buses = fileService.readBusesFromCSV();
         this.bookings = fileService.readBookingsFromCSV();
 
-        // Initialize nextBookingID based on existing bookings
+        // Determine the next starting booking ID based on existing data
         if (!bookings.isEmpty()) {
             int maxId = bookings.stream()
-                    .map(b -> b.getBookingID().substring(1)) // Remove "B" or "R" prefix
-                    .mapToInt(Integer::parseInt)
+                    .map(b -> b.getBookingID().substring(1)) // Remove prefix (e.g., 'R')
+                    .mapToInt(s -> {
+                        try { return Integer.parseInt(s); }
+                        catch (NumberFormatException e) { return 0; } // Handle invalid IDs gracefully
+                    })
                     .max()
                     .orElse(0);
             nextBookingID = maxId + 1;
         }
     }
 
-    public List<Bus> getAllBuses() {
-        return this.buses;
-    }
-
+    // Getter for the main application to use for reports
     public List<Booking> getAllBookings() {
         return this.bookings;
     }
 
+    // Displays buses matching source/destination and having available seats
     public void showAvailableBuses(String source, String destination) {
         List<Bus> available = buses.stream()
                 .filter(b -> b.getSource().equalsIgnoreCase(source) &&
@@ -45,7 +47,7 @@ public class BusService {
                 .collect(Collectors.toList());
 
         if (available.isEmpty()) {
-            System.out.println("\nNo buses available for this route.");
+            System.out.println("\nNo buses available for the route " + source + " -> " + destination);
             return;
         }
 
@@ -54,12 +56,15 @@ public class BusService {
         System.out.println("-----------------------");
     }
 
+    // Handles the core booking logic (transaction)
     public Booking bookSeat(Passenger passenger, String busNo, int seatCount) throws Exception {
+        // OOPs: Finding the bus object
         Bus selectedBus = buses.stream()
                 .filter(b -> b.getBusNo().equalsIgnoreCase(busNo))
                 .findFirst()
                 .orElseThrow(() -> new Exception("Bus not found with number: " + busNo));
 
+        // Exception Handling: Check availability
         if (selectedBus.getSeatsAvailable() < seatCount) {
             throw new Exception("Booking failed: Only " + selectedBus.getSeatsAvailable() + " seats available.");
         }
@@ -67,25 +72,26 @@ public class BusService {
         // 1. Calculate fare
         double totalFare = selectedBus.getFare() * seatCount;
 
-        // 2. Generate seat numbers (Simplified: just assign continuous seat numbers)
+        // 2. Generate seat numbers
         String seatNumbers = generateSeatNumbers(selectedBus, seatCount);
 
-        // 3. Create Booking
+        // 3. Create Booking object
         String bookingID = "R" + String.format("%03d", nextBookingID++);
         Booking newBooking = new Booking(bookingID, passenger.getName(), busNo, seatNumbers, totalFare);
 
-        // 4. Update Bus state (Crucial step)
+        // 4. Update Bus state (Crucial)
         selectedBus.setSeatsAvailable(selectedBus.getSeatsAvailable() - seatCount);
 
-        // 5. Update files (Transaction completion)
+        // 5. File I/O: Update persistent storage
         fileService.appendBookingToCSV(newBooking);
-        fileService.writeBusesToCSV(buses); // Overwrite the whole list with updated seats
+        fileService.writeBusesToCSV(buses);
 
         bookings.add(newBooking); // Update in-memory list
 
         return newBooking;
     }
 
+    // Calculates which seats were booked (simplified)
     private String generateSeatNumbers(Bus bus, int count) {
         int seatsBooked = bus.getTotalSeats() - bus.getSeatsAvailable();
         int startSeat = seatsBooked + 1;
@@ -97,29 +103,31 @@ public class BusService {
         return sb.toString();
     }
 
+    // Handles the core cancellation logic
     public void cancelBooking(String bookingID) throws Exception {
+        // OOPs: Find booking object
         Booking bookingToRemove = bookings.stream()
                 .filter(b -> b.getBookingID().equalsIgnoreCase(bookingID))
                 .findFirst()
                 .orElseThrow(() -> new Exception("Booking ID not found: " + bookingID));
 
-        // 1. Find the bus and determine seats cancelled
+        // Find associated bus
         Bus affectedBus = buses.stream()
                 .filter(b -> b.getBusNo().equals(bookingToRemove.getBusNo()))
                 .findFirst()
                 .orElseThrow(() -> new Exception("Associated bus not found. Data inconsistency."));
 
-        // Count seats from the comma-separated string
+        // Count seats
         int cancelledSeats = bookingToRemove.getSeatNo().split(",").length;
 
-        // 2. Return seats to the bus
+        // 1. Return seats to the bus
         affectedBus.setSeatsAvailable(affectedBus.getSeatsAvailable() + cancelledSeats);
 
-        // 3. Remove the booking from the in-memory list
+        // 2. Remove the booking from the in-memory list
         bookings.remove(bookingToRemove);
 
-        // 4. Update files
-        fileService.writeBookingsToCSV(bookings);
+        // 3. File I/O: Update persistent storage
+        fileService.writeBookingsToCSV(bookings); // Rewrites without the cancelled booking
         fileService.writeBusesToCSV(buses);
 
         System.out.println("Cancellation successful for Booking ID: " + bookingID);

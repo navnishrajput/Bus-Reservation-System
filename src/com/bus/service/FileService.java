@@ -17,6 +17,7 @@ public class FileService {
     // Method to load all buses from buses.csv
     public List<Bus> readBusesFromCSV() {
         List<Bus> buses = new ArrayList<>();
+        // Uses try-with-resources for automatic resource closing (File I/O)
         try (BufferedReader br = new BufferedReader(new FileReader(BUSES_FILE))) {
             String line;
             br.readLine(); // Skip header line
@@ -34,12 +35,13 @@ public class FileService {
                         );
                         buses.add(bus);
                     } catch (NumberFormatException e) {
+                        // Exception Handling for corrupted data
                         System.err.println("Error parsing number in buses.csv line: " + line);
                     }
                 }
             }
         } catch (FileNotFoundException e) {
-            System.err.println("CRITICAL: 'buses.csv' not found. Please create the file in the project root.");
+            System.err.println("CRITICAL: 'buses.csv' not found. Ensure it is in the project root.");
         } catch (IOException e) {
             System.err.println("Error reading bus data: " + e.getMessage());
         }
@@ -70,7 +72,6 @@ public class FileService {
                 }
             }
         } catch (FileNotFoundException e) {
-            // This is acceptable on first run, but warn the user.
             System.out.println("INFO: 'bookings.csv' not found. Starting with empty bookings list.");
         } catch (IOException e) {
             System.err.println("Error reading booking data: " + e.getMessage());
@@ -99,7 +100,7 @@ public class FileService {
             // Use 'true' for FileWriter to enable APPEND mode
             try (PrintWriter pw = new PrintWriter(new FileWriter(BOOKINGS_FILE, true))) {
                 // If file didn't exist, write the header first
-                if (!fileExists) {
+                if (!fileExists || new File(BOOKINGS_FILE).length() == 0) {
                     pw.println(BOOKING_HEADER);
                 }
                 pw.println(booking.toCSVString());
